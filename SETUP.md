@@ -24,9 +24,9 @@ git --version
 
 ### 3. Clone the Pico SDK and Examples
 
-Create your project folder and clone everything into it:
+Create a folder for your Pico work (example used here: `C:\pico`), then clone everything into it:
 ```powershell
-cd C:\Users\jnguy\Documents\pico_project
+cd C:\pico
 
 git clone https://github.com/raspberrypi/pico-sdk.git --branch master
 cd pico-sdk
@@ -37,24 +37,30 @@ git clone https://github.com/raspberrypi/pico-examples.git --branch master
 git clone https://github.com/raspberrypi/pico-extras.git
 ```
 
+> You can use any folder you like. Just keep track of it — you'll need the path in later steps.
+
 ### 4. Install the ARM GNU Toolchain
 
-Download the Windows toolchain from the [ARM Developer site](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads). Extract it to:
+Download the Windows toolchain from the [ARM Developer site](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads). Extract it into your pico folder, e.g.:
 ```
-C:\Users\jnguy\Documents\pico_project\arm_gnu_toolchain\
+C:\pico\arm_gnu_toolchain\
 ```
 
 You should see folders called `bin`, `lib`, `arm-none-eabi`, etc. inside it.
 
-### 5. Set the PICO_TOOLCHAIN_PATH Environment Variable
+### 5. Set Environment Variables
 
-1. Press `Win + S` → search **"Environment Variables"** → click **"Edit the system environment variables"**
+1. Press `Win` → search **"Environment Variables"** → click **"Edit the system environment variables"**
 2. Click **Environment Variables...**
-3. Under **User variables**, click **New**
-4. Set:
-   - **Variable name:** `PICO_TOOLCHAIN_PATH`
-   - **Variable value:** `C:\Users\jnguy\Documents\pico_project\arm_gnu_toolchain`
-5. Click OK on all dialogs
+3. Under **User variables**, click **New** for each of the following:
+
+| Variable Name | Value (adjust to your actual folder) |
+|---|---|
+| `PICO_SDK_PATH` | `C:\pico\pico-sdk` |
+| `PICO_TOOLCHAIN_PATH` | `C:\pico\arm_gnu_toolchain` |
+| `PICO_EXTRAS_PATH` | `C:\pico\pico-extras` |
+
+4. Click OK on all dialogs, then **restart any open terminals or CLion** for changes to take effect.
 
 ### 6. Install CLion
 
@@ -65,13 +71,13 @@ Download and install CLion from [jetbrains.com/clion](https://www.jetbrains.com/
 Go to **File → Settings → Build, Execution, Deployment → Toolchains**
 
 - Click **+** and select **MinGW**
-- Set the C Compiler to:
+- Set the C Compiler to your toolchain's gcc, e.g.:
   ```
-  C:\Users\jnguy\Documents\pico_project\arm_gnu_toolchain\bin\arm-none-eabi-gcc.exe
+  C:\pico\arm_gnu_toolchain\bin\arm-none-eabi-gcc.exe
   ```
 - Set the C++ Compiler to:
   ```
-  C:\Users\jnguy\Documents\pico_project\arm_gnu_toolchain\bin\arm-none-eabi-g++.exe
+  C:\pico\arm_gnu_toolchain\bin\arm-none-eabi-g++.exe
   ```
 
 > **Why MinGW?** Picotool is a Windows binary that gets built during compilation using CLion's bundled MinGW GCC. Your actual Pico firmware uses the ARM compiler. Both are needed.
@@ -98,9 +104,9 @@ your_project/
     └── main.c
 ```
 
-Copy `pico_sdk_import.cmake` from:
+Copy `pico_sdk_import.cmake` from your SDK folder:
 ```
-C:\Users\jnguy\Documents\pico_project\pico-sdk\external\pico_sdk_import.cmake
+<your PICO_SDK_PATH>\external\pico_sdk_import.cmake
 ```
 
 ### 2. CMakeLists.txt Template
@@ -143,14 +149,14 @@ Go to **File → Settings → Build, Execution, Deployment → CMake**
 
 **Toolchain:** MinGW
 
-**CMake options:**
+**CMake options** (replace `<TOOLCHAIN_PATH>` with your actual `PICO_TOOLCHAIN_PATH`):
 ```
--G Ninja -DPICO_BOARD=pico2 -DCMAKE_C_COMPILER="C:\Users\jnguy\Documents\pico_project\arm_gnu_toolchain\bin\arm-none-eabi-gcc.exe" -DCMAKE_CXX_COMPILER="C:\Users\jnguy\Documents\pico_project\arm_gnu_toolchain\bin\arm-none-eabi-g++.exe"
+-G Ninja -DPICO_BOARD=pico2 -DCMAKE_C_COMPILER="<TOOLCHAIN_PATH>\bin\arm-none-eabi-gcc.exe" -DCMAKE_CXX_COMPILER="<TOOLCHAIN_PATH>\bin\arm-none-eabi-g++.exe"
 ```
 
-**Environment:**
+**Environment** (replace each `<...>` with your actual paths):
 ```
-PICO_SDK_PATH=C:\Users\jnguy\Documents\pico_project\pico-sdk;PICO_TOOLCHAIN_PATH=C:\Users\jnguy\Documents\pico_project\arm_gnu_toolchain;PICO_EXTRAS_PATH=C:\Users\jnguy\Documents\pico_project\pico-extras
+PICO_SDK_PATH=<your pico-sdk folder>;PICO_TOOLCHAIN_PATH=<your arm_gnu_toolchain folder>;PICO_EXTRAS_PATH=<your pico-extras folder>
 ```
 
 Click **Apply → OK**.
@@ -164,7 +170,7 @@ Then select your target from the dropdown at the top right and hit the **hammer 
 ### 6. Flash to Pico
 
 1. Hold **BOOTSEL** and plug in the Pico via USB
-2. It mounts as `RP2350`
+2. It mounts as a drive called `RP2350`
 3. Find your `.uf2` in:
    ```
    your_project\cmake-build-debug-mingw\your_project.uf2
@@ -174,18 +180,18 @@ Then select your target from the dropdown at the top right and hit the **hammer 
 
 ### 7. View Serial Output
 
-Run in PowerShell (with Pico already plugged in and running):
-```powershell
-python -c "
-import serial, time
-s = serial.Serial('COM3', 115200, timeout=5)
-time.sleep(0.1)
-print('Connected!')
-while True:
-    line = s.readline()
-    if line:
-        print(line.decode('utf-8', 'ignore').strip())
-"
+Run in Python (with Pico already plugged in and running):
+
+**Requirements:**
+```bash
+pip install pyserial
 ```
+
+**Run:**
+```bash
+python serial_monitor.py
+```
+
+Defaults to `COM3` at `115200` baud. Edit `PORT` at the top of the script if your Pico is on a different port (check Device Manager → Ports (COM & LPT)).
 
 > Check **Device Manager → Ports (COM & LPT)** if your Pico is not on COM3.
