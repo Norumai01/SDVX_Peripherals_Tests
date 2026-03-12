@@ -10,4 +10,5 @@ pico_sdk_init()
 
 add_subdirectory(mx_switch_test)
 add_subdirectory(encoder_test)
-
+add_subdirectory(button_encoder_test)
+add_subdirectory(hid_usb_test)
