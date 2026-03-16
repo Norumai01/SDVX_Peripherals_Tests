@@ -329,3 +329,7 @@ _deps
 
 # Android studio 3.1+ serialized cache file
 
+# KiCad auto-generated
+*-backups/
+fp-info-cache
+
